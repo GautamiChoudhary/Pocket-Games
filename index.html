@@ -1,221 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flappy Game</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      height: 100vh;
-      background: linear-gradient(to bottom, #eb87cd, #cda432);
-      font-family: 'Comic Sans MS', cursive;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
 
-    canvas {
-      border: 5px solid #ff6b6b;
-      border-radius: 15px;
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-      background-color: #ffffff;
-    }
+        .container {
+            margin: 50px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+        }
 
-    .score {
-      font-size: 24px;
-      font-weight: bold;
-      color: #ffffff;
-      margin-bottom: 10px;
-    }
+        .word {
+            font-size: 2em;
+            letter-spacing: 5px;
+            margin-bottom: 20px;
+        }
 
-    .controls {
-      margin-top: 10px;
-    }
+        .letters {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
 
-    .button {
-      padding: 10px 20px;
-      font-size: 18px;
-      color: #ffffff;
-      background-color: #ff6b6b;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-      margin: 5px;
-    }
+        .letter {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            width: 40px;
+            height: 40px;
+            border: 2px solid #333;
+            border-radius: 10px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #fdfdfd;
+            transition: transform 0.2s ease, background-color 0.3s ease;
+            user-select: none;
+        }
 
-    .button:active {
-      transform: scale(0.98);
-      box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
-    }
-  </style>
+        .letter:hover {
+            transform: scale(1.1);
+            background-color: #ffe0e6;
+        }
+
+        .letter.correct {
+            background-color: #88e586;
+            color: white;
+            cursor: default;
+        }
+
+        .letter.incorrect {
+            background-color: #ff6b6b;
+            color: white;
+            cursor: default;
+        }
+
+        .message {
+            margin-top: 20px;
+            font-size: 1.5em;
+            color: #ff6b6b;
+            animation: fadeIn 1s ease;
+        }
+
+        .hangman {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .hint {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #555;
+        }
+
+        .level {
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        button.reset {
+            margin-top: 30px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #ff9a9e;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
+        }
+
+        button.reset:hover {
+            background-color: #ff6b6b;
+        }
+    </style>
 </head>
 <body>
-  <div class="score" id="scoreDisplay">Score: 0</div>
-  <canvas id="flappyCanvas" width="800" height="500"></canvas>
-  <div class="controls">
-    <button class="button" id="startButton">Start Game</button>
-    <button class="button" id="pauseButton">Pause Game</button>
-  </div>
-  <script>
-    const canvas = document.getElementById('flappyCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreDisplay = document.getElementById('scoreDisplay');
+    <div class="container">
+        <div id="word" class="word"></div>
+        <div id="letters" class="letters"></div>
+        <div id="message" class="message"></div>
+        <div id="hangman" class="hangman"></div>
+        <div id="hint" class="hint"></div>
+        <div id="level" class="level">Level: 1</div>
+        <button class="reset" onclick="resetGame()">Reset Game</button>
+    </div>
 
-    const birdImage = new Image();
-    birdImage.src = "./birdie.png"; 
+    <script>
+        const wordList = [
+            { word: 'JAVASCRIPT', hint: 'A popular programming language for web development.' },
+            { word: 'PROGRAMMING', hint: 'The act of writing code to solve problems.' },
+            { word: 'DEVELOPER', hint: 'A person who writes and maintains code.' },
+            { word: 'BROWSER', hint: 'Software used to access the internet.' },
+            { word: 'HANGMAN', hint: 'The name of this game.' },
+            { word: 'CODING', hint: 'A synonym for programming.' },
+            { word: 'ALGORITHM', hint: 'A step-by-step procedure for solving a problem.' },
+            { word: 'DEBUGGING', hint: 'The process of finding and fixing errors in code.' },
+            { word: 'FUNCTION', hint: 'A block of code that performs a specific task.' },
+            { word: 'VARIABLE', hint: 'A symbol for a value that can change.' }
+        ];
 
-    const bird = {
-      x: 50,
-      y: 250,
-      width: 30,
-      height: 30,
-      gravity: 0.5,
-      lift: -10,
-      velocity: 0
-    };
+        const maxMistakes = 6;
+        let level = 1;
+        let selectedEntry;
+        let selectedWord;
+        let hint;
+        let guessedWord;
+        let mistakes;
+        let guessedLetters;
 
-    const pipes = [];
-    const pipeWidth = 60;
-    const pipeGap = 150;
-    const pipeSpeed = 2;
+        const wordElement = document.getElementById('word');
+        const lettersElement = document.getElementById('letters');
+        const messageElement = document.getElementById('message');
+        const hangmanElement = document.getElementById('hangman');
+        const hintElement = document.getElementById('hint');
+        const levelElement = document.getElementById('level');
 
-    let isGameRunning = false;
-    let isGamePaused = false;
-    let score = 0;
+        function initializeGame() {
+            const randomIndex = Math.floor(Math.random() * wordList.length);
+            selectedEntry = wordList[randomIndex];
+            selectedWord = selectedEntry.word;
+            hint = selectedEntry.hint;
 
-    function drawBackground() {
-      // Draw sky
-      ctx.fillStyle = '#87CEEB'; // Sky blue
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+            guessedWord = Array(selectedWord.length).fill('_');
+            mistakes = 0;
+            guessedLetters = [];
 
-      // Draw grass
-      ctx.fillStyle = '#32CD32'; // Green grass
-      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-    }
-
-    function drawBird() {
-      ctx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
-    }
-
-    function drawPipes() {
-      ctx.fillStyle = '#FFD700'; // Yellowish color
-      pipes.forEach(pipe => {
-        // Top pipe
-        ctx.beginPath();
-        ctx.moveTo(pipe.x, 0);
-        ctx.arcTo(pipe.x + pipeWidth, 0, pipe.x + pipeWidth, pipe.top, 10);
-        ctx.lineTo(pipe.x + pipeWidth, pipe.top);
-        ctx.arcTo(pipe.x, pipe.top, pipe.x, 0, 10);
-        ctx.closePath();
-        ctx.fill();
-
-        // Bottom pipe
-        ctx.beginPath();
-        ctx.moveTo(pipe.x, canvas.height - pipe.bottom - 50);
-        ctx.arcTo(pipe.x + pipeWidth, canvas.height - pipe.bottom - 50, pipe.x + pipeWidth, canvas.height - 50, 10);
-        ctx.lineTo(pipe.x + pipeWidth, canvas.height - 50);
-        ctx.arcTo(pipe.x, canvas.height - 50, pipe.x, canvas.height - pipe.bottom - 50, 10);
-        ctx.closePath();
-        ctx.fill();
-      });
-    }
-
-    function generatePipe() {
-      const topHeight = Math.random() * (canvas.height / 2);
-      const bottomHeight = canvas.height - topHeight - pipeGap - 50;
-      pipes.push({
-        x: canvas.width,
-        top: topHeight,
-        bottom: bottomHeight
-      });
-    }
-
-    function updateBird() {
-      bird.velocity += bird.gravity;
-      bird.y += bird.velocity;
-
-      if (bird.y + bird.height > canvas.height - 50 || bird.y < 0) {
-        endGame();
-      }
-    }
-
-    function updatePipes() {
-      pipes.forEach(pipe => {
-        pipe.x -= pipeSpeed;
-
-        if (
-          bird.x < pipe.x + pipeWidth &&
-          bird.x + bird.width > pipe.x &&
-          (bird.y < pipe.top || bird.y + bird.height > canvas.height - pipe.bottom - 50)
-        ) {
-          endGame();
+            renderWord();
+            renderHint();
+            renderLetters();
+            renderHangman();
+            renderLevel();
         }
 
-        if (pipe.x + pipeWidth < 0) {
-          pipes.shift();
-          score++;
-          scoreDisplay.textContent = `Score: ${score}`;
+        function renderWord() {
+            wordElement.textContent = guessedWord.join(' ');
         }
-      });
 
-      if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
-        generatePipe();
-      }
-    }
+        function renderHint() {
+            hintElement.textContent = `Hint: ${hint}`;
+        }
 
-    function render() {
-      drawBackground();
-      drawBird();
-      drawPipes();
-    }
+        function renderLetters() {
+            lettersElement.innerHTML = '';
+            for (let i = 65; i <= 90; i++) {
+                const letter = String.fromCharCode(i);
+                const button = document.createElement('div');
+                button.textContent = letter;
+                button.classList.add('letter');
+                if (guessedLetters.includes(letter)) {
+                    if (selectedWord.includes(letter)) {
+                        button.classList.add('correct');
+                    } else {
+                        button.classList.add('incorrect');
+                    }
+                    button.style.pointerEvents = 'none';
+                } else {
+                    button.addEventListener('click', () => guessLetter(letter));
+                }
+                lettersElement.appendChild(button);
+            }
+        }
 
-    function gameLoop() {
-      if (isGameRunning && !isGamePaused) {
-        updateBird();
-        updatePipes();
-        render();
-        requestAnimationFrame(gameLoop);
-      }
-    }
+        function renderHangman() {
+            hangmanElement.textContent = `Mistakes: ${mistakes} / ${maxMistakes}`;
+        }
 
-    function endGame() {
-      isGameRunning = false;
-      alert(`Game Over! Your score: ${score}`);
-      resetGame();
-    }
+        function renderLevel() {
+            levelElement.textContent = `Level: ${level}`;
+        }
 
-    function resetGame() {
-      bird.y = 250;
-      bird.velocity = 0;
-      pipes.length = 0;
-      score = 0;
-      scoreDisplay.textContent = `Score: ${score}`;
-    }
+        function guessLetter(letter) {
+            if (guessedLetters.includes(letter) || mistakes >= maxMistakes) return;
+            guessedLetters.push(letter);
 
-    document.getElementById('startButton').addEventListener('click', () => {
-      if (!isGameRunning) {
-        isGameRunning = true;
-        resetGame();
-        gameLoop();
-      }
-    });
+            if (selectedWord.includes(letter)) {
+                for (let i = 0; i < selectedWord.length; i++) {
+                    if (selectedWord[i] === letter) {
+                        guessedWord[i] = letter;
+                    }
+                }
+                if (!guessedWord.includes('_')) {
+                    levelUp();
+                }
+            } else {
+                mistakes++;
+                if (mistakes >= maxMistakes) {
+                    gameOver();
+                }
+            }
 
-    document.getElementById('pauseButton').addEventListener('click', () => {
-      isGamePaused = !isGamePaused;
-      if (!isGamePaused) {
-        gameLoop();
-      }
-    });
+            renderWord();
+            renderLetters();
+            renderHangman();
+        }
 
-    window.addEventListener('keydown', (e) => {
-      if (e.key === ' ') {
-        bird.velocity = bird.lift;
-      }
-    });
-  </script>
+        function levelUp() {
+            level++;
+            messageElement.textContent = `You advanced to Level ${level}!`;
+            setTimeout(() => {
+                messageElement.textContent = '';
+                initializeGame();
+            }, 2000);
+        }
+
+        function gameOver() {
+            messageElement.textContent = `Game Over! The word was "${selectedWord}".`;
+            setTimeout(() => {
+                initializeGame();
+                messageElement.textContent = '';
+            }, 3000);
+        }
+
+        function resetGame() {
+            level = 1;
+            initializeGame();
+            messageElement.textContent = 'Game Reset!';
+            setTimeout(() => {
+                messageElement.textContent = '';
+            }, 2000);
+        }
+
+        // Initialize the game when the page loads
+        initializeGame();
+    </script>
 </body>
 </html>
