@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Hub</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #ff64ad, #fc25a2);
+            color: #fff;
+            overflow: hidden;
+        }
+        
+        /* Loader Animation */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ff64ad, #fc25a2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        #loader .spinner {
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            border-top: 8px solid #fff;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 5s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Fade-out Animation */
+        .hidden {
+            animation: fadeOut 15s ease-in forwards;
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+                visibility: visible;
+            }
+            100% {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+        header h1 {
+            font-size: 2.5rem;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .game-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .game-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .game-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .game-card h3 {
+            text-align: center;
+            padding: 10px 0;
+            background: rgba(0, 0, 0, 0.7);
+            margin: 0;
+            color: #fff;
+        }
+
+        /* Body Overflow Control */
+        .show-content {
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader -->
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" style="display: none;">
+        <header>
+            <h1>Game Hub</h1>
+            <p>Browse and Play Your Favorite Games!</p>
+        </header>
+        <div class="container">
+            <div class="game-card" onclick="redirect('./Stone Paper Scissor/index.html')">
+                <img src="./rock paper scissor game thumbnail.jpg" alt="Rock Paper Scissors">
+                <h3>Rock Paper Scissors</h3>
+            </div>
+            <div class="game-card" onclick="redirect('./Tic Tac Toe game/index.html')">
+                <img src="./tic tac toe game thumbnail.jpg" alt="Tic Tac Toe">
+                <h3>Tic Tac Toe</h3>
+            </div>
+            <!-- Repeat similar blocks for other games -->
+            <div class="game-card" onclick="redirect('./Snake Game/index.html')">
+                <img src="./snake game thumbnail.png" alt="Snake Game">
+                <h3>Snake Game</h3>
+            </div>
+            <div class="game-card" onclick="redirect('./Memory Game/index.html')">
+                <img src="./memory game thumbnail.jpg" alt="Memory Game">
+                <h3>Memory Game</h3>
+            </div>
+            <div class="game-card" onclick="redirect('./Flappy Bird Game/index.html')">
+                <img src="./flappy bird game thumbnail.png" alt="Flappy Bird Game">
+                <h3>Flappy Bird Game</h3>
+            </div>
+            <div class="game-card" onclick="redirect('./Hangman Game/index.html')">
+                <img src="./hangman game thumbnail.jpg" alt="Hangman Game">
+                <h3>Hangman Game</h3>
+            </div>
+            <div class="game-card" onclick="redirect('./Maze Puzzle Game/index.html')">
+                <img src="./maze game thumbnail.jpg" alt="Maze Puzzle Game">
+                <h3>Maze Puzzle Game</h3>
+            </div>
+            <div class="game-card" onclick="redirect('./Ping Pong Game/index.html')">
+                <img src="./ping pong game thumbnail.avif" alt="Ping Pong Game">
+                <h3>Ping Pong Game</h3>
+            </div>
+            <div class="game-card" onclick="redirect('./Quizz Game/index.html')">
+                <img src="./quizz game thumbnail.avif" alt="Quizz Game">
+                <h3>Quizz Game</h3>
+            </div>
+            <div class="game-card" onclick="redirect('./Riddle Game/index.html')">
+                <img src="./riddle game thumbnail.png" alt="Riddle Game">
+                <h3>Riddle Game</h3>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fade out the loader and show the main content
+        window.onload = function() {
+            const loader = document.getElementById('loader');
+            const mainContent = document.getElementById('main-content');
+
+            loader.classList.add('hidden');
+
+            setTimeout(() => {
+                loader.style.display = 'none';
+                mainContent.style.display = 'block';
+                document.body.classList.add('show-content');
+            }, 1000); // Match this duration to the fadeOut animation duration
+        };
+
+        function redirect(url) {
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>
