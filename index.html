@@ -1,161 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory Game</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #fffbf0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .game-container {
-            display: grid;
-            grid-template-columns: repeat(4, 100px);
-            grid-gap: 15px;
-            justify-content: center;
-            align-items: center;
-        }
-        .card {
-            width: 100px;
-            height: 100px;
-            background-color: #ffcbcb;
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 2em;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .card.flipped {
-            background-color: #fff;
-            color: #333;
-            pointer-events: none;
-        }
-        .message {
-            margin-top: 20px;
-            font-size: 1.2em;
-            text-align: center;
-        }
-        .button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #ffa07a;
-            border: none;
-            border-radius: 5px;
-            color: #fff;
-            cursor: pointer;
-            font-size: 1em;
-        }
-        .button:hover {
-            background-color: #ff7b50;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ping Pong Game</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      background: linear-gradient(135deg, #ff9a9a, #fac4c4);
+      font-family: 'Comic Sans MS', cursive;
+    }
+
+    canvas {
+      background-color: #ffffff;
+      border: 5px solid #ff6b6b;
+      border-radius: 15px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+      display: none;
+    }
+
+    .score {
+      font-size: 24px;
+      color: #ffffff;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .controls {
+      margin-top: 10px;
+    }
+
+    .button {
+      padding: 10px 20px;
+      font-size: 18px;
+      color: #ffffff;
+      background-color: #ff6b6b;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+      margin: 5px;
+    }
+
+    .button:active {
+      transform: scale(0.98);
+      box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+    }
+  </style>
 </head>
 <body>
-    <div>
-        <div class="game-container" id="gameContainer"></div>
-        <div class="message" id="message"></div>
-        <button class="button" id="restartButton">Restart Game</button>
-    </div>
+  <div class="score">Player: 0 | Computer: 0</div>
+  <canvas id="gameCanvas" width="800" height="500"></canvas>
+  <div class="controls">
+    <button class="button" id="startButton">Start Game</button>
+    <button class="button" id="playPauseButton" style="display: none;">Pause</button>
+    <button class="button" id="restartButton" style="display: none;">Restart</button>
+    <button class="button" id="speedUpButton" style="display: none;">Increase Speed</button>
+    <button class="button" id="speedDownButton" style="display: none;">Decrease Speed</button>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const playPauseButton = document.getElementById('playPauseButton');
+    const startButton = document.getElementById('startButton');
+    const restartButton = document.getElementById('restartButton');
+    const speedUpButton = document.getElementById('speedUpButton');
+    const speedDownButton = document.getElementById('speedDownButton');
 
-    <script>
-        const icons = ['🍎', '🍌', '🍇', '🍉', '🍒', '🍓', '🍑', '🍍', '🥝', '🍋', '🍊', '🥥'];
-        const gameContainer = document.getElementById('gameContainer');
-        const message = document.getElementById('message');
-        const restartButton = document.getElementById('restartButton');
+    const paddleWidth = 15;
+    const paddleHeight = 100;
+    const ballRadius = 10;
 
-        let cardArray = [];
-        let firstCard = null;
-        let secondCard = null;
-        let lockBoard = false;
-        let matchedPairs = 0;
+    let playerScore = 0;
+    let computerScore = 0;
+    let isPaused = true;
 
-        function createCards() {
-            const shuffledIcons = [...icons, ...icons].sort(() => 0.5 - Math.random());
-            gameContainer.innerHTML = '';
-            shuffledIcons.forEach((icon, index) => {
-                const card = document.createElement('div');
-                card.classList.add('card');
-                card.dataset.icon = icon;
-                card.dataset.index = index;
-                card.innerHTML = ""; // Hidden icon initially
-                card.addEventListener('click', flipCard);
-                gameContainer.appendChild(card);
-                cardArray.push(card);
-            });
-        }
+    const player = {
+      x: 10,
+      y: canvas.height / 2 - paddleHeight / 2,
+      width: paddleWidth,
+      height: paddleHeight,
+      color: '#ff6b6b',
+      dy: 0
+    };
 
-        function flipCard() {
-            if (lockBoard || this === firstCard) return;
+    const computer = {
+      x: canvas.width - 10 - paddleWidth,
+      y: canvas.height / 2 - paddleHeight / 2,
+      width: paddleWidth,
+      height: paddleHeight,
+      color: '#6bc1ff',
+      dy: 3
+    };
 
-            this.classList.add('flipped');
-            this.innerHTML = this.dataset.icon;
+    const ball = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      radius: ballRadius,
+      speed: 5,
+      dx: 5,
+      dy: 3,
+      color: '#ffd93d'
+    };
 
-            if (!firstCard) {
-                firstCard = this;
-                return;
-            }
+    function drawRect(x, y, width, height, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, width, height);
+    }
 
-            secondCard = this;
-            lockBoard = true;
-            checkForMatch();
-        }
+    function drawCircle(x, y, radius, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
+    }
 
-        function checkForMatch() {
-            const isMatch = firstCard.dataset.icon === secondCard.dataset.icon;
-            if (isMatch) {
-                disableCards();
-                matchedPairs++;
-                if (matchedPairs === icons.length) {
-                    message.textContent = 'Congratulations! You matched all pairs!';
-                }
-            } else {
-                unflipCards();
-            }
-        }
+    function drawText(text, x, y, color) {
+      ctx.fillStyle = color;
+      ctx.font = '20px Comic Sans MS';
+      ctx.fillText(text, x, y);
+    }
 
-        function disableCards() {
-            firstCard.removeEventListener('click', flipCard);
-            secondCard.removeEventListener('click', flipCard);
-            resetBoard();
-        }
+    function movePlayer() {
+      player.y += player.dy;
 
-        function unflipCards() {
-            setTimeout(() => {
-                firstCard.classList.remove('flipped');
-                secondCard.classList.remove('flipped');
-                firstCard.innerHTML = "";
-                secondCard.innerHTML = "";
-                resetBoard();
-            }, 1000);
-        }
+      if (player.y < 0) player.y = 0;
+      if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
+    }
 
-        function resetBoard() {
-            [firstCard, secondCard, lockBoard] = [null, null, false];
-        }
+    function moveComputer() {
+      if (ball.y < computer.y + computer.height / 2) {
+        computer.y -= computer.dy;
+      } else {
+        computer.y += computer.dy;
+      }
 
-        function restartGame() {
-            cardArray = [];
-            firstCard = null;
-            secondCard = null;
-            lockBoard = false;
-            matchedPairs = 0;
-            message.textContent = '';
-            createCards();
-        }
+      if (computer.y < 0) computer.y = 0;
+      if (computer.y + computer.height > canvas.height) computer.y = canvas.height - computer.height;
+    }
 
-        restartButton.addEventListener('click', restartGame);
+    function moveBall() {
+      ball.x += ball.dx;
+      ball.y += ball.dy;
 
-        createCards();
-    </script>
+      if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+        ball.dy *= -1;
+      }
+
+      if (collision(ball, player)) {
+        ball.dx = Math.abs(ball.dx);
+        ball.dy += player.dy * 0.2;
+      }
+
+      if (collision(ball, computer)) {
+        ball.dx = -Math.abs(ball.dx);
+      }
+
+      if (ball.x - ball.radius < 0) {
+        computerScore++;
+        resetBall();
+      }
+
+      if (ball.x + ball.radius > canvas.width) {
+        playerScore++;
+        resetBall();
+      }
+    }
+
+    function collision(ball, paddle) {
+      return (
+        ball.x - ball.radius < paddle.x + paddle.width &&
+        ball.x + ball.radius > paddle.x &&
+        ball.y - ball.radius < paddle.y + paddle.height &&
+        ball.y + ball.radius > paddle.y
+      );
+    }
+
+    function resetBall() {
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      ball.dx = ball.speed * (Math.random() > 0.5 ? 1 : -1);
+      ball.dy = ball.speed * (Math.random() > 0.5 ? 1 : -1);
+      updateScore();
+    }
+
+    function updateScore() {
+      document.querySelector('.score').textContent = `Player: ${playerScore} | Computer: ${computerScore}`;
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawRect(player.x, player.y, player.width, player.height, player.color);
+      drawRect(computer.x, computer.y, computer.width, computer.height, computer.color);
+      drawCircle(ball.x, ball.y, ball.radius, ball.color);
+    }
+
+    function gameLoop() {
+      if (!isPaused) {
+        movePlayer();
+        moveComputer();
+        moveBall();
+        render();
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    playPauseButton.addEventListener('click', () => {
+      isPaused = !isPaused;
+      playPauseButton.textContent = isPaused ? 'Play' : 'Pause';
+    });
+
+    startButton.addEventListener('click', () => {
+      isPaused = false;
+      startButton.style.display = 'none';
+      playPauseButton.style.display = 'inline';
+      restartButton.style.display = 'inline';
+      speedUpButton.style.display = 'inline';
+      speedDownButton.style.display = 'inline';
+      canvas.style.display = 'block';
+      document.querySelector('.score').style.display = 'block';
+    });
+
+    restartButton.addEventListener('click', () => {
+      playerScore = 0;
+      computerScore = 0;
+      resetBall();
+      updateScore();
+    });
+
+    speedUpButton.addEventListener('click', () => {
+      ball.speed += 1;
+      ball.dx = ball.dx > 0 ? ball.speed : -ball.speed;
+      ball.dy = ball.dy > 0 ? ball.speed : -ball.speed;
+    });
+
+    speedDownButton.addEventListener('click', () => {
+      if (ball.speed > 1) {
+        ball.speed -= 1;
+        ball.dx = ball.dx > 0 ? ball.speed : -ball.speed;
+        ball.dy = ball.dy > 0 ? ball.speed : -ball.speed;
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp') player.dy = -7;
+      if (e.key === 'ArrowDown') player.dy = 7;
+    });
+
+    window.addEventListener('keyup', () => {
+      player.dy = 0;
+    });
+
+    resetBall();
+    gameLoop();
+  </script>
 </body>
 </html>
