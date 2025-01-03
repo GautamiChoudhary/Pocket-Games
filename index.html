@@ -3,145 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rock Paper Scissors</title>
+    <title>Tic Tac Toe</title>
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #7b00ff 0%, #fa00d0 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            color: #fff;
+            font-family: 'Arial', sans-serif;
             text-align: center;
-        }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-        }
-        .choices {
+            margin: 0;
+            padding: 0;
             display: flex;
-            gap: 20px;
-            margin: 20px 0;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #eb74b0, #e6d39f);
         }
-        .choice {
-            cursor: pointer;
+        .game-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 10px;
+        }
+        .cell {
             width: 120px;
             height: 120px;
-            border: 2px solid white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
             border-radius: 10px;
-            overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.3s;
-            clip-path: circle(45%);
-            background-size: cover;
-            background-position: center;
+            font-size: 3rem;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
         }
-        .choice:hover {
+        .cell:hover {
             transform: scale(1.1);
-            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.5);
+            background-color: #e0e0e0;
         }
-        .choice.rock {
-            background-image: url('./Images/rock.png');
+        .cell.taken {
+            pointer-events: none;
+            cursor: default;
         }
-        .choice.paper {
-            background-image: url('./Images/paper.png');
-        }
-        .choice.scissors {
-            background-image: url('./Images/scissors.png');
-        }
-        .result {
-            font-size: 1.5rem;
-            margin-top: 30px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 10px 20px;
-            border-radius: 10px;
-        }
-        .score {
+        .message {
             margin-top: 20px;
-            font-size: 1.2rem;
-            padding: 10px 20px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #555;
         }
-        footer {
-            margin-top: 50px;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
+        .reset {
+            margin-top: 20px;
+            padding: 10px 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffffff;
+            background-color: #af4c82;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .reset:hover {
+            background-color: #a0457a;
         }
     </style>
 </head>
 <body>
-    <h1>Rock Paper Scissors</h1>
-    <div class="choices">
-        <div class="choice rock" data-choice="rock"></div>
-        <div class="choice paper" data-choice="paper"></div>
-        <div class="choice scissors" data-choice="scissors"></div>
+    <div class="game-container">
+        <div class="board" id="board"></div>
+        <div class="message" id="message">Player X's turn</div>
+        <button class="reset" id="reset">Restart Game</button>
     </div>
-    <div class="result">Make your move to see the result!</div>
-    <div class="score">Player: 0 | Computer: 0</div>
-    <footer>Have fun playing Rock Paper Scissors!</footer>
-
     <script>
-        const choices = document.querySelectorAll('.choice');
-        const resultDiv = document.querySelector('.result');
-        const scoreDiv = document.querySelector('.score');
+        const boardElement = document.getElementById('board');
+        const messageElement = document.getElementById('message');
+        const resetButton = document.getElementById('reset');
 
-        let playerScore = 0;
-        let computerScore = 0;
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameActive = true;
 
-        choices.forEach(choice => {
-            choice.addEventListener('click', () => {
-                const playerChoice = choice.dataset.choice;
-                const computerChoice = getComputerChoice();
-                const winner = getWinner(playerChoice, computerChoice);
+        function checkWinner() {
+            const winningCombinations = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                [0, 4, 8], [2, 4, 6]             // diagonals
+            ];
 
-                updateScore(winner);
-                displayResult(playerChoice, computerChoice, winner);
+            for (const combination of winningCombinations) {
+                const [a, b, c] = combination;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a];
+                }
+            }
+
+            return board.includes('') ? null : 'Draw';
+        }
+
+        function updateBoard() {
+            boardElement.innerHTML = '';
+            board.forEach((cell, index) => {
+                const cellElement = document.createElement('div');
+                cellElement.classList.add('cell');
+                if (cell) cellElement.classList.add('taken');
+                cellElement.textContent = cell;
+                cellElement.addEventListener('click', () => handleCellClick(index));
+                boardElement.appendChild(cellElement);
             });
-        });
-
-        function getComputerChoice() {
-            const choices = ['rock', 'paper', 'scissors'];
-            return choices[Math.floor(Math.random() * choices.length)];
         }
 
-        function getWinner(player, computer) {
-            if (player === computer) {
-                return 'draw';
-            }
+        function handleCellClick(index) {
+            if (!gameActive || board[index]) return;
 
-            if (
-                (player === 'rock' && computer === 'scissors') ||
-                (player === 'paper' && computer === 'rock') ||
-                (player === 'scissors' && computer === 'paper')
-            ) {
-                return 'player';
+            board[index] = currentPlayer;
+            updateBoard();
+
+            const winner = checkWinner();
+
+            if (winner) {
+                gameActive = false;
+                messageElement.textContent = winner === 'Draw' ? 'Its a draw!' : `Player ${winner} wins!`;
             } else {
-                return 'computer';
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                messageElement.textContent = `Player ${currentPlayer}'s turn`;
             }
         }
 
-        function updateScore(winner) {
-            if (winner === 'player') {
-                playerScore++;
-            } else if (winner === 'computer') {
-                computerScore++;
-            }
+        function resetGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            messageElement.textContent = "Player X's turn";
+            updateBoard();
         }
 
-        function displayResult(playerChoice, computerChoice, winner) {
-            if (winner === 'draw') {
-                resultDiv.textContent = `It's a draw! You both chose ${playerChoice}.`;
-            } else if (winner === 'player') {
-                resultDiv.textContent = `You win! ${playerChoice} beats ${computerChoice}.`;
-            } else {
-                resultDiv.textContent = `You lose! ${computerChoice} beats ${playerChoice}.`;
-            }
+        resetButton.addEventListener('click', resetGame);
 
-            scoreDiv.textContent = `Player: ${playerScore} | Computer: ${computerScore}`;
-        }
+        updateBoard();
     </script>
 </body>
 </html>
