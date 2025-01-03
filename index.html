@@ -3,272 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hangman Game</title>
+    <title>Maze Puzzle Game</title>
     <style>
         body {
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-            text-align: center;
+            font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
+            background: linear-gradient(135deg, #ffb555, #ffe055);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
         }
 
         .container {
-            margin: 50px auto;
-            padding: 20px;
-            background: #fff;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            background: #ffffff;
+            border-radius: 20px;
         }
 
-        .word {
-            font-size: 2em;
-            letter-spacing: 5px;
+        .score {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #555;
             margin-bottom: 20px;
         }
 
-        .letters {
-            margin-top: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .letter {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.2em;
-            width: 40px;
-            height: 40px;
-            border: 2px solid #333;
+        .maze {
+            display: grid;
+            gap: 2px;
+            background-color: #eee;
+            padding: 10px;
             border-radius: 10px;
-            margin: 5px;
-            cursor: pointer;
-            background-color: #fdfdfd;
-            transition: transform 0.2s ease, background-color 0.3s ease;
-            user-select: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
-        .letter:hover {
-            transform: scale(1.1);
-            background-color: #ffe0e6;
+        .cell {
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: #F8F9FA;
+            border-radius: 5px;
+            transition: background-color 0.2s ease;
         }
 
-        .letter.correct {
-            background-color: #88e586;
-            color: white;
-            cursor: default;
+        .wall {
+            background-color: #FF6F61;
+            border-radius: 10px;
         }
 
-        .letter.incorrect {
-            background-color: #ff6b6b;
-            color: white;
-            cursor: default;
+        .player {
+            background-color: #6A5ACD;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            animation: bounce 0.3s infinite alternate;
         }
 
-        .message {
-            margin-top: 20px;
-            font-size: 1.5em;
-            color: #ff6b6b;
-            animation: fadeIn 1s ease;
-        }
-
-        .hangman {
-            margin-top: 20px;
-            font-size: 1.2em;
-            color: #333;
-        }
-
-        .hint {
-            margin-top: 20px;
-            font-size: 1.2em;
-            color: #555;
-        }
-
-        .level {
-            margin-top: 20px;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #333;
-        }
-
-        @keyframes fadeIn {
+        @keyframes bounce {
             from {
-                opacity: 0;
+                transform: translateY(0);
             }
             to {
-                opacity: 1;
+                transform: translateY(-5px);
             }
         }
 
-        button.reset {
-            margin-top: 30px;
-            padding: 10px 20px;
-            font-size: 1em;
-            background-color: #ff9a9e;
-            border: none;
-            border-radius: 10px;
-            color: white;
-            cursor: pointer;
+        .goal {
+            background-color: #4CAF50;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: background-color 0.3s ease;
         }
 
-        button.reset:hover {
-            background-color: #ff6b6b;
+        @media (max-width: 600px) {
+            .maze {
+                padding: 5px;
+            }
+            .score {
+                font-size: 1.5em;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="word" class="word"></div>
-        <div id="letters" class="letters"></div>
-        <div id="message" class="message"></div>
-        <div id="hangman" class="hangman"></div>
-        <div id="hint" class="hint"></div>
-        <div id="level" class="level">Level: 1</div>
-        <button class="reset" onclick="resetGame()">Reset Game</button>
+        <div class="score" id="score">Score: 0</div>
+        <div class="maze" id="maze"></div>
     </div>
 
     <script>
-        const wordList = [
-            { word: 'JAVASCRIPT', hint: 'A popular programming language for web development.' },
-            { word: 'PROGRAMMING', hint: 'The act of writing code to solve problems.' },
-            { word: 'DEVELOPER', hint: 'A person who writes and maintains code.' },
-            { word: 'BROWSER', hint: 'Software used to access the internet.' },
-            { word: 'HANGMAN', hint: 'The name of this game.' },
-            { word: 'CODING', hint: 'A synonym for programming.' },
-            { word: 'ALGORITHM', hint: 'A step-by-step procedure for solving a problem.' },
-            { word: 'DEBUGGING', hint: 'The process of finding and fixing errors in code.' },
-            { word: 'FUNCTION', hint: 'A block of code that performs a specific task.' },
-            { word: 'VARIABLE', hint: 'A symbol for a value that can change.' }
-        ];
+        let currentLevel = 1;
+        let playerPosition = { x: 0, y: 0 };
+        let goalPosition = { x: 0, y: 0 };
+        let score = 0;
+        let maze = []; // Global maze array
+        const mazeElement = document.getElementById('maze');
+        const scoreElement = document.getElementById('score');
 
-        const maxMistakes = 6;
-        let level = 1;
-        let selectedEntry;
-        let selectedWord;
-        let hint;
-        let guessedWord;
-        let mistakes;
-        let guessedLetters;
+        function generateMaze(rows, cols) {
+            const newMaze = Array.from({ length: rows }, () => Array(cols).fill(1));
 
-        const wordElement = document.getElementById('word');
-        const lettersElement = document.getElementById('letters');
-        const messageElement = document.getElementById('message');
-        const hangmanElement = document.getElementById('hangman');
-        const hintElement = document.getElementById('hint');
-        const levelElement = document.getElementById('level');
+            function carve(x, y) {
+                const directions = [
+                    [0, -2], [0, 2], [-2, 0], [2, 0]
+                ].sort(() => Math.random() - 0.5);
 
-        function initializeGame() {
-            const randomIndex = Math.floor(Math.random() * wordList.length);
-            selectedEntry = wordList[randomIndex];
-            selectedWord = selectedEntry.word;
-            hint = selectedEntry.hint;
+                for (const [dx, dy] of directions) {
+                    const nx = x + dx;
+                    const ny = y + dy;
 
-            guessedWord = Array(selectedWord.length).fill('_');
-            mistakes = 0;
-            guessedLetters = [];
-
-            renderWord();
-            renderHint();
-            renderLetters();
-            renderHangman();
-            renderLevel();
-        }
-
-        function renderWord() {
-            wordElement.textContent = guessedWord.join(' ');
-        }
-
-        function renderHint() {
-            hintElement.textContent = `Hint: ${hint}`;
-        }
-
-        function renderLetters() {
-            lettersElement.innerHTML = '';
-            for (let i = 65; i <= 90; i++) {
-                const letter = String.fromCharCode(i);
-                const button = document.createElement('div');
-                button.textContent = letter;
-                button.classList.add('letter');
-                if (guessedLetters.includes(letter)) {
-                    if (selectedWord.includes(letter)) {
-                        button.classList.add('correct');
-                    } else {
-                        button.classList.add('incorrect');
+                    if (nx > 0 && ny > 0 && nx < rows - 1 && ny < cols - 1 && newMaze[nx][ny] === 1) {
+                        newMaze[x + dx / 2][y + dy / 2] = 0;
+                        newMaze[nx][ny] = 0;
+                        carve(nx, ny);
                     }
-                    button.style.pointerEvents = 'none';
-                } else {
-                    button.addEventListener('click', () => guessLetter(letter));
-                }
-                lettersElement.appendChild(button);
-            }
-        }
-
-        function renderHangman() {
-            hangmanElement.textContent = `Mistakes: ${mistakes} / ${maxMistakes}`;
-        }
-
-        function renderLevel() {
-            levelElement.textContent = `Level: ${level}`;
-        }
-
-        function guessLetter(letter) {
-            if (guessedLetters.includes(letter) || mistakes >= maxMistakes) return;
-            guessedLetters.push(letter);
-
-            if (selectedWord.includes(letter)) {
-                for (let i = 0; i < selectedWord.length; i++) {
-                    if (selectedWord[i] === letter) {
-                        guessedWord[i] = letter;
-                    }
-                }
-                if (!guessedWord.includes('_')) {
-                    levelUp();
-                }
-            } else {
-                mistakes++;
-                if (mistakes >= maxMistakes) {
-                    gameOver();
                 }
             }
 
-            renderWord();
-            renderLetters();
-            renderHangman();
+            newMaze[1][1] = 0;
+            carve(1, 1);
+            return newMaze;
         }
 
-        function levelUp() {
-            level++;
-            messageElement.textContent = `You advanced to Level ${level}!`;
-            setTimeout(() => {
-                messageElement.textContent = '';
-                initializeGame();
-            }, 2000);
+        function initializeMaze(level) {
+            const size = Math.min(9 + level * 2, 21); // Limit max size for responsiveness
+            maze = generateMaze(size, size);
+            playerPosition = { x: 1, y: 1 };
+            goalPosition = { x: size - 2, y: size - 2 };
+            renderMaze();
         }
 
-        function gameOver() {
-            messageElement.textContent = `Game Over! The word was "${selectedWord}".`;
-            setTimeout(() => {
-                initializeGame();
-                messageElement.textContent = '';
-            }, 3000);
+        function renderMaze() {
+            const cellSize = Math.max(40 - currentLevel, 20); // Adaptive cell size
+            mazeElement.style.gridTemplateColumns = `repeat(${maze[0].length}, ${cellSize}px)`;
+            mazeElement.style.gridTemplateRows = `repeat(${maze.length}, ${cellSize}px)`;
+            mazeElement.innerHTML = '';
+            for (let y = 0; y < maze.length; y++) {
+                for (let x = 0; x < maze[y].length; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    if (maze[y][x] === 1) {
+                        cell.classList.add('wall');
+                    } else if (x === playerPosition.x && y === playerPosition.y) {
+                        cell.classList.add('player');
+                    } else if (x === goalPosition.x && y === goalPosition.y) {
+                        cell.classList.add('goal');
+                    }
+                    mazeElement.appendChild(cell);
+                }
+            }
         }
 
-        function resetGame() {
-            level = 1;
-            initializeGame();
-            messageElement.textContent = 'Game Reset!';
-            setTimeout(() => {
-                messageElement.textContent = '';
-            }, 2000);
+        function movePlayer(dx, dy) {
+            const newX = playerPosition.x + dx;
+            const newY = playerPosition.y + dy;
+            if (maze[newY][newX] === 0) {
+                playerPosition.x = newX;
+                playerPosition.y = newY;
+                renderMaze();
+                checkWin();
+            }
         }
 
-        // Initialize the game when the page loads
-        initializeGame();
+        function checkWin() {
+            if (playerPosition.x === goalPosition.x && playerPosition.y === goalPosition.y) {
+                score += 10;
+                scoreElement.textContent = `Score: ${score}`;
+                currentLevel++;
+                alert('Level Up!');
+                initializeMaze(currentLevel);
+            }
+        }
+
+        document.addEventListener('keydown', (event) => {
+            switch (event.key) {
+                case 'ArrowUp':
+                    movePlayer(0, -1);
+                    break;
+                case 'ArrowDown':
+                    movePlayer(0, 1);
+                    break;
+                case 'ArrowLeft':
+                    movePlayer(-1, 0);
+                    break;
+                case 'ArrowRight':
+                    movePlayer(1, 0);
+                    break;
+            }
+        });
+
+        initializeMaze(currentLevel);
     </script>
 </body>
 </html>
